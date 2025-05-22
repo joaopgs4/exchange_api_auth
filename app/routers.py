@@ -5,10 +5,16 @@ from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 from middleware import *
 from typing import Optional
+from schemas import *
+import requests
+import os
+
+URL_ACCOUNT_SERVICE = os.getenv("URL_ACCOUNT_SERVICE")
+
 
 router = APIRouter(
-    prefix="/route",
-    tags=["route"]
+    prefix="/auth",
+    tags=["auth"]
 )
 
 ###################################
@@ -20,36 +26,25 @@ router = APIRouter(
 async def root_func():
     return {"message": "Root function ran!"}
 
-#Function for token test and debbugin. Simply receives a token, reads it and returns a new token
-#Input: Http/Https request
-#Output: Http/Https request containing a new cookie
-@router.get("/debug/token")
-async def token_debug(
-    request: Request,
-    cookie: AuthToken = Depends(get_cookie_as_model)  # Decoded cookie (JWT payload)
-):
+@router.post("/login", response_model=UserReadDTO, status_code=200)
+async def auth_login(payload: UserLoginDTO):
     try:
-        cookie_data = cookie.dict() #Converts from AuthToken to dict
-        cookie_data["debugged"] = True #Adds "debug" field
-
-        # Create a new token with fresh expiry and the debug flag
-        new_token = make_cookie_from_dict(cookie_data)
-
-        # Set the debug cookie
+        user = requests.post(URL_ACCOUNT_SERVICE + "/account/login", json=payload.dict())
+        if not user:
+            raise HTTPException(400, detail="Erro ao realizar request de login")
+        if user.status_code != 200:
+            raise HTTPException(status_code=user.status_code, detail=user.json().get("detail"))
+        cookie = make_cookie_from_dict(user.json())
+        
         response = JSONResponse(
-            content={
-                "valid": True,
-                "token_payload": cookie_data
-            }
+            content=user.json()
         )
         response.set_cookie(
-            key="debug_test_token",
-            value=new_token,
+            key="session_token",
+            value=cookie,
             httponly=True,
-            secure=True,
             samesite="lax"
         )
-
         return response
 
     except HTTPException as e:
