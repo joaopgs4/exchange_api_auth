@@ -30,8 +30,6 @@ async def root_func():
 async def auth_login(payload: UserLoginDTO):
     try:
         user = requests.post(URL_ACCOUNT_SERVICE + "/account/login", json=payload.dict())
-        if not user:
-            raise HTTPException(400, detail="Erro ao realizar request de login")
         if user.status_code != 200:
             raise HTTPException(status_code=user.status_code, detail=user.json().get("detail"))
         cookie = make_cookie_from_dict(user.json())

@@ -2,7 +2,7 @@
 #Functions that are ran before the calling of my authenticated routes, for veryfying the
 #session token and extracting its info for use in the routes functions
 from fastapi import Request, HTTPException
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from schemas import AuthToken
 from typing import Dict
 import jwt
@@ -78,7 +78,7 @@ def get_cookie_as_model(request: Request) -> AuthToken:
 def make_cookie_from_dict(payload: Dict) -> str:
     payload = payload.copy()
 
-    expire = datetime.now(datetime.timezone.utc) + timedelta(seconds=JWT_EXPIRATION)
+    expire = datetime.now(timezone.utc) + timedelta(seconds=JWT_EXPIRATION)
     payload["exp"] = int(expire.timestamp())
 
     try:
