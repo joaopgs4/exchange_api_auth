@@ -1,16 +1,15 @@
 # routers.py
-from fastapi import APIRouter, HTTPException, Request, Depends
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
-from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
-from middleware import *
-from typing import Optional
+from middleware import make_cookie_from_dict
 from schemas import *
 import requests
 import os
 
 URL_ACCOUNT_SERVICE = os.getenv("URL_ACCOUNT_SERVICE")
-
+if not URL_ACCOUNT_SERVICE:
+    raise RuntimeError("Environment variable URL_ACCOUNT_SERVICE is not set.")
 
 router = APIRouter(
     prefix="/auth",
